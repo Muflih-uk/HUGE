@@ -41,4 +41,9 @@ class TodoController {
     todos.removeAt(index);
     saveTodos();
   }
+
+  void clearAll() {
+  todos.clear();
+  saveTodos();
+  }
 }

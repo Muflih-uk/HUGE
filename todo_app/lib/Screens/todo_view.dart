@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../Controller/todo_controller.dart';
+import 'package:todo_app/Controller/todo_controller.dart';
+import 'package:todo_app/Screens/Widgets/add_task_dialog.dart';
+import 'package:todo_app/Screens/Widgets/todo_tile.dart';
 
 class TodoView extends StatefulWidget {
   const TodoView({super.key});
@@ -19,40 +21,43 @@ class _TodoViewState extends State<TodoView> {
     controller.loadTodos().then((_) => setState(() {}));
   }
 
-  void selectAll(){
-    for(int i=0; i<controller.todos.length;i++){
+  void selectAll() {
+    for (int i = 0; i < controller.todos.length; i++) {
       controller.toggleDone(i);
     }
     selectA = !selectA;
     setState(() {});
   }
 
-  void deleteAll(){
-    for(int i=0; i<controller.todos.length;i++){
-      controller.removeTodo(i);
-    }
-    setState(() {});
+  void addTask() {
+    inputController.clear();
+    showAddOrEditDialog(
+      context: context,
+      controller: inputController,
+      title: 'Add Task',
+      onConfirm: () {
+        controller.addTodo(inputController.text);
+        setState(() {});
+      },
+    );
   }
 
-  void showEditDialog(int index) {
+  void editTask(int index) {
     inputController.text = controller.todos[index].task;
-    showDialog(
+    showAddOrEditDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Edit Task"),
-        content: TextField(controller: inputController),
-        actions: [
-          TextButton(
-            onPressed: () {
-              controller.updateTodo(index, inputController.text);
-              Navigator.pop(context);
-              setState(() {});
-            },
-            child: const Text("Save"),
-          )
-        ],
-      ),
+      controller: inputController,
+      title: 'Edit Task',
+      onConfirm: () {
+        controller.updateTodo(index, inputController.text);
+        setState(() {});
+      },
     );
+  }
+
+  void deleteAll() {
+    controller.clearAll();
+    setState(() {});
   }
 
   @override
@@ -61,78 +66,33 @@ class _TodoViewState extends State<TodoView> {
       appBar: AppBar(
         title: const Text('To Do List'),
         actions: [
-          selectA && controller.todos.isNotEmpty ? 
-          IconButton(
-            onPressed: deleteAll, 
-            icon: Icon(Icons.delete)
-          ) : Container(),
-          controller.todos.isNotEmpty ?
-          IconButton(
-            onPressed: selectAll,
-            icon: Icon(Icons.checklist_rounded)
-          ) : Container()
-
+          if (selectA && controller.todos.isNotEmpty)
+            IconButton(icon: const Icon(Icons.delete), onPressed: deleteAll),
+          if (controller.todos.isNotEmpty)
+            IconButton(icon: const Icon(Icons.checklist_rounded), onPressed: selectAll),
         ],
       ),
       body: ListView.builder(
         itemCount: controller.todos.length,
         itemBuilder: (_, index) {
-          final todo = controller.todos[index];
-          return ListTile(
-            title: Text(
-              todo.task,
-              style: TextStyle(
-                decoration:
-                    todo.isDone ? TextDecoration.lineThrough : null,
-              ),
-            ),
-            leading: Checkbox(
-              value: todo.isDone,
-              onChanged: (_) {
-                controller.toggleDone(index);
-                setState(() {});
-              },
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () => showEditDialog(index),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () {
-                    controller.removeTodo(index);
-                    setState(() {});
-                  },
-                ),
-              ],
-            ),
+          return TodoTile(
+            index: index,
+            controller: controller,
+            onChanged: () {
+              controller.toggleDone(index);
+              selectA = !selectA;
+              setState(() {});
+            },
+            onEdit: () => editTask(index),
+            onDelete: () {
+              controller.removeTodo(index);
+              setState(() {});
+            },
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          inputController.clear();
-          showDialog(
-            context: context,
-            builder: (_) => AlertDialog(
-              title: const Text("Add Task"),
-              content: TextField(controller: inputController),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    controller.addTodo(inputController.text);
-                    Navigator.pop(context);
-                    setState(() {});
-                  },
-                  child: const Text("Add"),
-                )
-              ],
-            ),
-          );
-        },
+        onPressed: addTask,
         child: const Icon(Icons.add),
       ),
     );
