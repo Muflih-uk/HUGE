@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:todo_app/Controller/todo_controller.dart';
 import 'package:todo_app/Screens/Widgets/add_task_dialog.dart';
 import 'package:todo_app/Screens/Widgets/todo_tile.dart';
+import 'package:provider/provider.dart';
+import '../Providers/todo_provider.dart';
 
 class TodoView extends StatefulWidget {
   const TodoView({super.key});
@@ -11,88 +12,57 @@ class TodoView extends StatefulWidget {
 }
 
 class _TodoViewState extends State<TodoView> {
-  final TodoController controller = TodoController();
   final TextEditingController inputController = TextEditingController();
-  bool selectA = false;
 
-  @override
-  void initState() {
-    super.initState();
-    controller.loadTodos().then((_) => setState(() {}));
-  }
-
-  void selectAll() {
-    for (int i = 0; i < controller.todos.length; i++) {
-      controller.toggleDone(i);
-    }
-    selectA = !selectA;
-    setState(() {});
-  }
-
-  void addTask() {
+  void addTask(BuildContext context) {
     inputController.clear();
     showAddOrEditDialog(
       context: context,
       controller: inputController,
       title: 'Add Task',
       onConfirm: () {
-        controller.addTodo(inputController.text);
-        setState(() {});
+        Provider.of<TodoProvider>(context, listen: false).addTodo(inputController.text);
       },
     );
   }
 
-  void editTask(int index) {
-    inputController.text = controller.todos[index].task;
+  void editTask(BuildContext context ,int index) {
+    final provider = Provider.of<TodoProvider>(context, listen: false);
+    inputController.text = provider.todos[index].task;
     showAddOrEditDialog(
       context: context,
       controller: inputController,
       title: 'Edit Task',
       onConfirm: () {
-        controller.updateTodo(index, inputController.text);
-        setState(() {});
+        provider.updateTodo(index, inputController.text);
       },
     );
   }
 
-  void deleteAll() {
-    controller.clearAll();
-    setState(() {});
-  }
-
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<TodoProvider>(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('To Do List'),
         actions: [
-          if (selectA && controller.todos.isNotEmpty)
-            IconButton(icon: const Icon(Icons.delete), onPressed: deleteAll),
-          if (controller.todos.isNotEmpty)
-            IconButton(icon: const Icon(Icons.checklist_rounded), onPressed: selectAll),
+          if (provider.todos.isNotEmpty)
+            IconButton(icon: const Icon(Icons.delete), onPressed: provider.clearAll),
+          if (provider.todos.isNotEmpty)
+            IconButton(icon: const Icon(Icons.checklist_rounded), onPressed: provider.toggleAllDone),
         ],
       ),
       body: ListView.builder(
-        itemCount: controller.todos.length,
+        itemCount: provider.todos.length,
         itemBuilder: (_, index) {
           return TodoTile(
             index: index,
-            controller: controller,
-            onChanged: () {
-              controller.toggleDone(index);
-              selectA = !selectA;
-              setState(() {});
-            },
-            onEdit: () => editTask(index),
-            onDelete: () {
-              controller.removeTodo(index);
-              setState(() {});
-            },
+            onEdit: () => editTask(context,index),
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: addTask,
+        onPressed: () => addTask(context),
         child: const Icon(Icons.add),
       ),
     );

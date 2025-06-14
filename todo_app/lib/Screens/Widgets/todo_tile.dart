@@ -1,25 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:todo_app/Controller/todo_controller.dart';
+import 'package:provider/provider.dart';
+import '../../Providers/todo_provider.dart';
 
 class TodoTile extends StatelessWidget {
   final int index;
-  final TodoController controller;
-  final VoidCallback onChanged;
   final VoidCallback onEdit;
-  final VoidCallback onDelete;
 
   const TodoTile({
     super.key,
     required this.index,
-    required this.controller,
-    required this.onChanged,
-    required this.onEdit,
-    required this.onDelete,
+    required this.onEdit
   });
 
   @override
   Widget build(BuildContext context) {
-    final todo = controller.todos[index];
+    final provider = Provider.of<TodoProvider>(context);
+    final todo = provider.todos[index];
+
+
     return ListTile(
       title: Text(
         todo.task,
@@ -29,13 +27,13 @@ class TodoTile extends StatelessWidget {
       ),
       leading: Checkbox(
         value: todo.isDone,
-        onChanged: (_) => onChanged(),
+        onChanged: (_) => provider.toggleDone(index),
       ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(icon: const Icon(Icons.edit), onPressed: onEdit),
-          IconButton(icon: const Icon(Icons.delete), onPressed: onDelete),
+          IconButton(icon: const Icon(Icons.delete), onPressed: () => provider.removeTask(index)),
         ],
       ),
     );
